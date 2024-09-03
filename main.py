@@ -11,16 +11,18 @@ import asyncio
 load_dotenv()
 
 # Получение токена из переменной окружения
-API_TOKEN = os.getenv('BOT_TOKEN')
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 LOG_LEVEL = os.getenv("LOG_LEVEL")
+API_TOKEN_CATS = os.getenv("CATS_TOKEN")
+API_TOKEN_DOGS = os.getenv("DOGS_TOKEN")
 if not API_TOKEN:
-    raise ValueError("No API_TOKEN provided. Please set the API_TOKEN environment variable.")
+    raise ValueError("No BOT_TOKEN provided. Please set the API_TOKEN environment variable.")
 
 # Настраиваем логирование
 logging.basicConfig(level=logging.ERROR)
 
 # Инициализация бота
-bot = Bot(token=API_TOKEN)
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Обработчик команды /boobs
@@ -81,7 +83,7 @@ async def send_butts(message: Message):
 
 @dp.message(Command(commands=['cats'], prefix="!/"))
 async def send_cats(message: Message):
-    response = requests.get('https://api.thecatapi.com/api/images/get?api_key=Mjg0Mzg2&format=json')
+    response = requests.get('https://api.thecatapi.com/api/images/get?api_key=API_TOKEN_CATS&format=json')
     if response.status_code == 200:
         data = response.json()
         if data:
@@ -99,7 +101,7 @@ async def send_cats(message: Message):
 
 @dp.message(Command(commands=['dogs'], prefix="!/"))
 async def send_dogs(message: Message):
-    response = requests.get('https://api.thedogapi.com/api/images/get?api_key=live_RzUjnybpjZK8WbKhzUvw1N31k9oidsYa8StjO9nTs3C4t8Bzu6IOYCkAaTecY1Gr&format=json')
+    response = requests.get('https://api.thedogapi.com/api/images/get?api_key=API_TOKEN_DOGS&format=json')
     if response.status_code == 200:
         data = response.json()
         if data:
