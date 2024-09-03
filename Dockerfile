@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py .
 
 # Устанавливаем переменную окружения для токена API
-ENV API_TOKEN=your_api_token_here
+ENV BOT_TOKEN=your_api_token_here
 
 # Команда для запуска бота
 CMD ["python", "main.py"]
