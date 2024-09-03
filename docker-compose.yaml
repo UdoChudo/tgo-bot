@@ -6,3 +6,4 @@ services:
     env_file:
       - stack.env
     restart: always
+    pull_policy: build
