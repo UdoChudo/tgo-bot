@@ -85,14 +85,17 @@ async def send_cats(message: Message):
     if response.status_code == 200:
         data = response.json()
         if data:
-            img_url = data[0]['url']
-        await bot.send_photo(
-            chat_id=message.chat.id,  # Отправка в тот же чат, где была вызвана команда
-            photo=img_url,
-            has_spoiler=False,
-            caption=f"{message.from_user.username} заказал котиков!"
-        )
-
+            img_url = str(data[0]['url'])
+            await bot.send_photo(
+                chat_id=message.chat.id,  # Отправка в тот же чат, где была вызвана команда
+                photo=img_url,
+                has_spoiler=False,
+                caption=f"{message.from_user.username} заказал котиков!"
+            )
+        else:
+            await message.answer("Не удалось получить данные с сервера.")
+    else:
+        await message.answer("Ошибка при выполнении запроса к API.")
 @dp.message()
 async def default_message(message: types.Message):
     pass
