@@ -8,3 +8,7 @@
 /dataSources.local.xml
 .idea/
 /.env
+/misc.xml
+/vcs.xml
+/tgo-bot.iml
+/modules.xml
