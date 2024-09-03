@@ -96,6 +96,24 @@ async def send_cats(message: Message):
             await message.answer("Не удалось получить данные с сервера.")
     else:
         await message.answer("Ошибка при выполнении запроса к API.")
+
+@dp.message(Command(commands=['dogs'], prefix="!/"))
+async def send_dogs(message: Message):
+    response = requests.get('https://api.thedogapi.com/api/images/get?api_key=live_RzUjnybpjZK8WbKhzUvw1N31k9oidsYa8StjO9nTs3C4t8Bzu6IOYCkAaTecY1Gr&format=json')
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            img_url = str(data[0]['url'])
+            await bot.send_photo(
+                chat_id=message.chat.id,  # Отправка в тот же чат, где была вызвана команда
+                photo=img_url,
+                has_spoiler=False,
+                caption=f"{message.from_user.username} заказал пёсиков!"
+            )
+        else:
+            await message.answer("Не удалось получить данные с сервера.")
+    else:
+        await message.answer("Ошибка при выполнении запроса к API.")
 @dp.message()
 async def default_message(message: types.Message):
     pass
@@ -105,6 +123,7 @@ async def main():
     dp.message.register(send_boobs)
     dp.message.register(send_butts)
     dp.message.register(send_cats)
+    dp.message.register(send_dogs)
 
     # Запуск polling
     await dp.start_polling(bot)
