@@ -15,7 +15,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 LOG_LEVEL = os.getenv("LOG_LEVEL")
 API_TOKEN_CATS = os.getenv("CATS_TOKEN")
 API_TOKEN_DOGS = os.getenv("DOGS_TOKEN")
-if not API_TOKEN:
+if not BOT_TOKEN:
     raise ValueError("No BOT_TOKEN provided. Please set the API_TOKEN environment variable.")
 
 # Настраиваем логирование
