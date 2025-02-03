@@ -1,29 +1,58 @@
+import os
 import logging
 import requests
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, BaseMiddleware
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, InputFile, FSInputFile
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
-import os
 import asyncio
-
 # Загрузка переменных окружения из .env файла
 load_dotenv()
 
 # Получение токена из переменной окружения
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 LOG_LEVEL = os.getenv("LOG_LEVEL")
-API_TOKEN_CATS = os.getenv("CATS_TOKEN")
-API_TOKEN_DOGS = os.getenv("DOGS_TOKEN")
-if not BOT_TOKEN:
-    raise ValueError("No BOT_TOKEN provided. Please set the API_TOKEN environment variable.")
-
+CAT_API = os.getenv('CAT_TOKEN')
+DOG_API = os.getenv('DOG_TOKEN')
+BOT_OWNER_ID = os.getenv('BOT_OWNER')
+if not API_TOKEN:
+    raise ValueError("No API_TOKEN provided. Please set the API_TOKEN environment variable.")
+if not CAT_API:
+    raise ValueError("No CAT_TOKEN provided. Please set the CAT_TOKEN environment variable.")
+if not DOG_API:
+    raise ValueError("No DOG_TOKEN provided. Please set the DOG_TOKEN environment variable.")
+if not BOT_OWNER_ID:
+    raise ValueError("No BOT_OWNER_ID provided. Please set the BOT_OWNER_ID environment variable.")
+FILE_PATH = "/app/data/users.txt"
+FILE_PATH_WINDOWS = "./users.txt"
 # Настраиваем логирование
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
 # Инициализация бота
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
+# Middleware для ограничения частоты запросов
+class ThrottlingMiddleware(BaseMiddleware):
+    def __init__(self, rate_limit=1.0):
+        self.rate_limit = rate_limit
+        self.last_time = {}
+        super().__init__()
+
+    async def __call__(self, handler, event, data):
+        if isinstance(event, types.Message):
+            user_id = event.from_user.id
+            now = asyncio.get_event_loop().time()
+            if user_id in self.last_time and now - self.last_time[user_id] < self.rate_limit:
+                await event.answer("Подождите немного перед повторным нажатием!")
+                return
+            self.last_time[user_id] = now
+        return await handler(event, data)
+
+# Регистрируем middleware
+dp.message.middleware(ThrottlingMiddleware())
+
 
 # Обработчик команды /boobs
 @dp.message(Command(commands=['boobs'], prefix="!/"))
@@ -83,7 +112,7 @@ async def send_butts(message: Message):
 
 @dp.message(Command(commands=['cats'], prefix="!/"))
 async def send_cats(message: Message):
-    response = requests.get('https://api.thecatapi.com/api/images/get?api_key=API_TOKEN_CATS&format=json')
+    response = requests.get('https://api.thecatapi.com/api/images/get?api_key=' + CAT_API + '&format=json')
     if response.status_code == 200:
         data = response.json()
         if data:
@@ -101,7 +130,7 @@ async def send_cats(message: Message):
 
 @dp.message(Command(commands=['dogs'], prefix="!/"))
 async def send_dogs(message: Message):
-    response = requests.get('https://api.thedogapi.com/api/images/get?api_key=API_TOKEN_DOGS&format=json')
+    response = requests.get('https://api.thedogapi.com/api/images/get?api_key=' + DOG_API + '&format=json')
     if response.status_code == 200:
         data = response.json()
         if data:
@@ -116,17 +145,68 @@ async def send_dogs(message: Message):
             await message.answer("Не удалось получить данные с сервера.")
     else:
         await message.answer("Ошибка при выполнении запроса к API.")
+
+@dp.message(Command("census"))
+async def start_census(message: types.Message):
+    if message.from_user.id != int(BOT_OWNER_ID):  # Убедитесь, что BOT_OWNER_ID это строка, конвертируем в int
+        await message.answer("Только владелец бота может запускать перепись!")
+        return
+
+    # Исправленное создание клавиатуры
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Принять участие", callback_data="census_join")]
+    ])
+
+    await message.answer("Перепись участников начата! Нажмите кнопку ниже, чтобы участвовать.", reply_markup=keyboard)
+
+
+
+@dp.callback_query(lambda c: c.data == "census_join")
+async def register_user(callback_query: types.CallbackQuery):
+    user = callback_query.from_user
+    chat_id = callback_query.message.chat.id
+    username = user.username or user.full_name
+
+    try:
+        with open("/app/data/users.txt", "r", encoding="utf-8") as file:
+            existing_users = file.readlines()
+    except FileNotFoundError:
+        existing_users = []
+
+    user_entry = f"{user.id}, @{username}\n"
+    if user_entry in existing_users:
+        await callback_query.answer("Вы уже записаны в перепись!")
+        return
+
+    with open("/app/data/users.txt", "a", encoding="utf-8") as file:
+        file.write(user_entry)
+
+    await callback_query.answer("Вы записаны в перепись!")
+
+# Обработчик команды /sendfile
+@dp.message(Command(commands=["sendfile"]))
+async def send_file(message: Message):
+    document = ""
+    # Проверка, является ли отправитель владельцем бота
+    if message.from_user.id != int(BOT_OWNER_ID):
+        await message.answer("Только владелец бота может отправить файл!")
+        return
+    if os.path.exists(FILE_PATH):
+        document = FSInputFile(FILE_PATH)
+    elif os.path.exists(FILE_PATH_WINDOWS):
+        document = FSInputFile(FILE_PATH_WINDOWS)
+    else:
+        await message.answer("Файл не найден на сервере")
+    await bot.send_document(message.chat.id, document, caption="Вот ваш файл!")
+
+
 @dp.message()
 async def default_message(message: types.Message):
     pass
 
-async def main():
-    # Регистрация обработчиков
-    dp.message.register(send_boobs)
-    dp.message.register(send_butts)
-    dp.message.register(send_cats)
-    dp.message.register(send_dogs)
 
+
+async def main():
     # Запуск polling
     await dp.start_polling(bot)
 

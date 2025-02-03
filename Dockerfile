@@ -1,5 +1,5 @@
 # Используем официальный Python образ в качестве базового
-FROM python:3.11-slim
+FROM python:3.13.1-slim
 
 LABEL authors="UdoChudo"
 
@@ -11,12 +11,13 @@ COPY requirements.txt .
 
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
-
+RUN mkdir /app/data
 # Копируем все файлы проекта в рабочую директорию
 COPY main.py .
 
 # Устанавливаем переменную окружения для токена API
 ENV BOT_TOKEN=your_api_token_here
-
+ENV CAT_TOKEN=your_cat_token_here
+ENV DOG_TOKEN=your_dog_token_here
 # Команда для запуска бота
 CMD ["python", "main.py"]
