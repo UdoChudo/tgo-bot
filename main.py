@@ -3,7 +3,7 @@ import logging
 import requests
 from aiogram import Bot, Dispatcher, types, BaseMiddleware
 from aiogram.filters import Command
-from aiogram.types import Message, InputFile, FSInputFile
+from aiogram.types import Message, FSInputFile
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 import asyncio
@@ -16,7 +16,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL")
 CAT_API = os.getenv('CAT_TOKEN')
 DOG_API = os.getenv('DOG_TOKEN')
 BOT_OWNER_ID = os.getenv('BOT_OWNER')
-if not API_TOKEN:
+if not BOT_TOKEN:
     raise ValueError("No API_TOKEN provided. Please set the API_TOKEN environment variable.")
 if not CAT_API:
     raise ValueError("No CAT_TOKEN provided. Please set the CAT_TOKEN environment variable.")
@@ -203,8 +203,6 @@ async def send_file(message: Message):
 @dp.message()
 async def default_message(message: types.Message):
     pass
-
-
 
 async def main():
     # Запуск polling
